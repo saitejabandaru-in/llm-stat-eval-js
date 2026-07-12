@@ -1,6 +1,6 @@
 {
   "name": "@saitejabandaru-in/llm-stat-eval",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Rigorous statistical evaluation and comparison of LLMs and AI agents using Nonparametric Combination (NPC) and Bootstrapping.",
   "main": "./dist/src/index.js",
   "module": "./dist/src/index.mjs",
