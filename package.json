@@ -1,12 +1,12 @@
 {
-  "name": "@saitejabandaru-in/llm-stat",
+  "name": "@saitejabandaru-in/llm-prompt-eval",
   "version": "0.4.0",
   "description": "Rigorous statistical evaluation and comparison of LLMs and AI agents using Nonparametric Combination (NPC) and Bootstrapping.",
   "main": "./dist/src/index.js",
   "module": "./dist/src/index.mjs",
   "types": "./dist/src/index.d.ts",
   "bin": {
-    "llm-stat": "./dist/src/cli.js"
+    "llm-prompt-eval": "./dist/src/cli.js"
   },
   "exports": {
     ".": {
@@ -41,12 +41,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saitejabandaru-in/llm-stat.git"
+    "url": "git+https://github.com/saitejabandaru-in/llm-prompt-eval.git"
   },
   "bugs": {
-    "url": "https://github.com/saitejabandaru-in/llm-stat/issues"
+    "url": "https://github.com/saitejabandaru-in/llm-prompt-eval/issues"
   },
-  "homepage": "https://github.com/saitejabandaru-in/llm-stat#readme",
+  "homepage": "https://github.com/saitejabandaru-in/llm-prompt-eval#readme",
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0"

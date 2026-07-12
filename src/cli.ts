@@ -9,7 +9,7 @@ import { generateHtmlReport } from "./report";
 
 function showHelp(): void {
     console.log(`
-Usage: npx llm-stat --config <config.json> [options]
+Usage: npx llm-prompt-eval --config <config.json> [options]
 
 Options:
   --config <path>   Path to the JSON configuration file containing scores (Required)
