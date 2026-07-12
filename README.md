@@ -1,26 +1,20 @@
-# Statistical Evaluation for LLMs & AI Agents in TypeScript (`@saitejabandaru-in/llm-stat-eval`)
+# Enterprise Statistical Evaluation for LLMs & AI Agents (`@saitejabandaru-in/llm-stat-eval`)
 
-Rigorous statistical comparison and evaluation of Large Language Models (LLMs) and AI agents in JavaScript, Node.js, and browser environments. It applies **bootstrapped confidence intervals**, **permutation significance tests**, and **Nonparametric Combination (NPC)** to prove if model performance differences are statistically significant.
+Rigorous statistical comparison and evaluation of Large Language Models (LLMs) and AI agents in JavaScript, Node.js, and browser environments. It applies **bootstrapped confidence intervals**, **permutation significance tests**, **Sequential Probability Ratio Testing (SPRT)**, and **Nonparametric Combination (NPC)** to prove if model/prompt differences are statistically significant.
 
 ---
 
-## 🧐 Why Statistical Evaluation?
+## 🚀 Key Features
 
-Comparing LLMs (e.g. comparing GPT-4 vs Claude-3.5 on a custom dataset) often suffers from:
-1. **Small Sample Sizes**: Evaluating models on expensive or human-annotated datasets limits the sample size (e.g., 50–100 samples).
-2. **Non-Normal Distributions**: Accuracy is binary (0 or 1), and user ratings (1 to 5) are ordinal. Parametric tests like the Student's $t$-test or ANOVA assume normality and fail on these metrics.
-3. **Multivariate Dependencies**: Models are evaluated across multiple correlated criteria (e.g., Accuracy, Coherence, Latency, API Cost). 
-
-`@saitejabandaru-in/llm-stat-eval` resolves these issues by using **nonparametric resampling methods**:
-- **Permutation Tests**: Calculates exact, distribution-free $p$-values to compare two models.
-- **Bootstrapping**: Computes distribution-free confidence intervals for LLM metric statistics.
-- **Nonparametric Combination (NPC)**: Integrates multiple evaluation criteria into a single global comparison statistic, preserving their correlation structures.
+* **Sequential Probability Ratio Test (SPRT)**: Cost-optimized streaming evaluation with early stopping. Terminate benchmark runs early as soon as statistical significance is reached, saving up to 80% on LLM API tokens.
+* **Interactive HTML Report Dashboard**: Generates a self-contained, beautiful, glassmorphic dark-mode HTML report containing distribution histograms (Chart.js) and metrics summaries.
+* **Command Line Interface (CLI)**: Automate stats pipeline in shell scripts or CI/CD pipelines.
+* **Nonparametric Combination (NPC)**: Combines multiple correlated metrics (e.g. Accuracy, Latency, Cost) into a single, global p-value.
+* **Bootstrapping**: Computes distribution-free confidence intervals for LLM metric statistics.
 
 ---
 
 ## 🛠️ Installation
-
-Install from npm or GitHub Packages:
 
 ```bash
 npm install @saitejabandaru-in/llm-stat-eval
@@ -28,64 +22,86 @@ npm install @saitejabandaru-in/llm-stat-eval
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Advanced Features Guide
 
-### 1. Bootstrapped Confidence Intervals (`LLMEvaluator`)
-Find the 95% confidence interval for an LLM's accuracy or custom rating score:
+### 1. Cost-Optimized Streaming Evals (Wald's SPRT)
+Evaluate prompts on-the-fly and stop early when statistical significance is reached.
 
 ```typescript
-import { LLMEvaluator } from "@saitejabandaru-in/llm-stat-eval";
+import { SPRTComparator } from "@saitejabandaru-in/llm-stat-eval";
 
-// Generate mock binary accuracy scores (e.g. 85% success rate over 80 test samples)
-const scores = Array.from({ length: 80 }, () => (Math.random() < 0.85 ? 1 : 0));
+// Setup Wald's SPRT: effectSize = 0.5 (detect 0.5 points difference), alpha = 0.05, beta = 0.20
+const sprt = new SPRTComparator(0.5, 0.05, 0.20);
 
-const evaluator = new LLMEvaluator(1000, 0.95);
-const results = evaluator.bootstrapCi(scores, "mean", "percentile");
+const scoresModelA = [8.5, 9.2, 8.8, 9.5, 9.1, 9.4];
+const scoresModelB = [7.0, 7.5, 6.8, 7.2, 7.0, 7.6];
 
-const res = results[0];
-console.log(`Observed Accuracy: ${res.observed.toFixed(3)}`);
-console.log(`95% CI:            [${res.confLow.toFixed(3)}, ${res.confHigh.toFixed(3)}]`);
+const results = sprt.processArray(scoresModelA, scoresModelB);
+
+console.log("Final Decision:      ", results.finalDecision); // "ACCEPT_H1" (Model A is better) or "ACCEPT_H0"
+console.log("Stopped at evaluation:", results.stoppedAt);      // e.g. 5 (out of 6 samples)
+console.log("API Cost Savings:    ", results.savingsPercent.toFixed(1) + "%");
 ```
 
-### 2. Rigorous Model Comparison (`LLMComparator`)
-Compare Model A and Model B using a paired permutation test (both evaluated on the same prompt set):
+### 2. Interactive HTML Report Generator
+Generate a standalone HTML dashboard report displaying your evaluation results:
 
 ```typescript
-import { LLMComparator } from "@saitejabandaru-in/llm-stat-eval";
+import { LLMComparator, generateHtmlReport } from "@saitejabandaru-in/llm-stat-eval";
+import * as fs from "fs";
 
-// Sample ratings (1 to 10 scale) on 50 tasks for Model A and Model B
-const scoresA = Array.from({ length: 50 }, () => Math.random() * 3 + 7); // mean ~8.5
-const scoresB = Array.from({ length: 50 }, () => Math.random() * 3 + 6); // mean ~7.5
-
-const comparator = new LLMComparator(2000, "fisher", "two-sided");
-comparator.compare(scoresA, scoresB, true); // paired = true
-
-console.log("Observed Difference (A - B):", comparator.observedDiffs[0]);
-console.log("Permutation p-value:         ", comparator.partialPValues[0]);
-```
-
-### 3. Multivariate Criteria Combination (NPC)
-Compare models across multiple correlated criteria (e.g. Accuracy, Latency, and Cost) simultaneously:
-
-```typescript
-// 50 evaluations on 2 criteria: [Accuracy (higher=better), Latency (lower=better)]
-const scoresA = Array.from({ length: 50 }, () => [Math.random() > 0.15 ? 1 : 0, Math.random() * 500 + 200]);
-const scoresB = Array.from({ length: 50 }, () => [Math.random() > 0.35 ? 1 : 0, Math.random() * 1000 + 400]);
-
-// For Accuracy, we want A > B ('greater'). For Latency, we want A < B ('less')
-const comparator = new LLMComparator(2000, "fisher", {
-  0: "greater",
-  1: "less"
-});
+const comparator = new LLMComparator(1000, "fisher", "two-sided");
 comparator.compare(scoresA, scoresB, true);
 
-console.log("Partial p-values [Acc, Lat]:", comparator.partialPValues);
-console.log("Global Combined p-value:    ", comparator.globalPValue);
+// Generate report
+const html = generateHtmlReport(comparator, {
+  modelAName: "GPT-4o",
+  modelBName: "Claude-3.5-Sonnet",
+  metricNames: ["Accuracy", "Responsiveness"]
+});
+
+fs.writeFileSync("evaluation_report.html", html, "utf-8");
+console.log("Dashboard created successfully!");
+```
+
+### 3. Command Line Interface (CLI)
+Automate your evaluations in shell environments.
+
+#### Step 1: Create a JSON configuration file (`eval_config.json`)
+```json
+{
+  "modelAName": "GPT-4o",
+  "modelBName": "Claude-3.5-Sonnet",
+  "metricNames": ["Accuracy", "Latency (ms)"],
+  "scoresA": [
+    [1.0, 320],
+    [1.0, 290],
+    [0.0, 450],
+    [1.0, 310],
+    [1.0, 280]
+  ],
+  "scoresB": [
+    [0.0, 600],
+    [1.0, 550],
+    [0.0, 710],
+    [0.0, 580],
+    [1.0, 620]
+  ],
+  "paired": true,
+  "nPermutations": 1000,
+  "combinationMethod": "fisher",
+  "alternative": ["greater", "less"]
+}
+```
+
+#### Step 2: Run the CLI
+```bash
+npx llm-stat-eval --config eval_config.json --output report.html
 ```
 
 ---
 
-## 🧪 Mathematical Details
+## 🧪 Mathematical Background
 
 ### Nonparametric Combination (NPC)
 For $D$ evaluation metrics, the global null hypothesis is:
@@ -99,4 +115,4 @@ This combines different variables (even with different scales and units) into a 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
+MIT
