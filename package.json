@@ -1,0 +1,51 @@
+{
+  "name": "@saitejabandaru-in/llm-stat-eval",
+  "version": "0.1.0",
+  "description": "Rigorous statistical evaluation and comparison of LLMs and AI agents using Nonparametric Combination (NPC) and Bootstrapping.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.esm.json && mv dist/index.js dist/index.mjs || true",
+    "test": "node --test dist/tests/**/*.test.js || tsc && node --test dist/tests/*.test.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "evaluation",
+    "statistics",
+    "nonparametric",
+    "bootstrap",
+    "permutation-test",
+    "ai-agent",
+    "machine-learning"
+  ],
+  "author": "Sai Teja Bandaru <Saitejaroyal2311@gmail.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saitejabandaru-in/llm-stat-eval-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/saitejabandaru-in/llm-stat-eval-js/issues"
+  },
+  "homepage": "https://github.com/saitejabandaru-in/llm-stat-eval-js#readme",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
