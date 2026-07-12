@@ -28,14 +28,14 @@ jobs:
       run: node scripts/run_evals.js
       
     - name: Execute Rigorous Statistical Check
-      # Run the llm-stat-eval CLI to determine if the branch changes
+      # Run the llm-proof CLI to determine if the branch changes
       # are statistically significantly worse than main baselines.
       # If the global p-value indicates degradation (under your config threshold),
       # the CLI will fail and prevent the PR merge.
-      run: npx @saitejabandaru-in/llm-stat-eval --config eval_scores.json --output report.html
+      run: npx @saitejabandaru-in/llm-proof --config eval_scores.json --output report.html
       
     - name: Upload HTML Report Dashboard
       uses: actions/upload-artifact@v3
       with:
-        name: llm-stat-eval-report
+        name: llm-proof-report
         path: report.html

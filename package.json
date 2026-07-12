@@ -1,12 +1,12 @@
 {
-  "name": "@saitejabandaru-in/llm-stat-eval",
+  "name": "@saitejabandaru-in/llm-proof",
   "version": "0.3.1",
   "description": "Rigorous statistical evaluation and comparison of LLMs and AI agents using Nonparametric Combination (NPC) and Bootstrapping.",
   "main": "./dist/src/index.js",
   "module": "./dist/src/index.mjs",
   "types": "./dist/src/index.d.ts",
   "bin": {
-    "llm-stat-eval": "./dist/src/cli.js"
+    "llm-proof": "./dist/src/cli.js"
   },
   "exports": {
     ".": {
@@ -41,12 +41,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saitejabandaru-in/llm-stat-eval-js.git"
+    "url": "git+https://github.com/saitejabandaru-in/llm-proof.git"
   },
   "bugs": {
-    "url": "https://github.com/saitejabandaru-in/llm-stat-eval-js/issues"
+    "url": "https://github.com/saitejabandaru-in/llm-proof/issues"
   },
-  "homepage": "https://github.com/saitejabandaru-in/llm-stat-eval-js#readme",
+  "homepage": "https://github.com/saitejabandaru-in/llm-proof#readme",
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0"

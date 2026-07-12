@@ -1,13 +1,13 @@
 # 📊 Enterprise Statistical Evaluation for LLMs & AI Agents
 
 <p align="center">
-  <img src="https://img.shields.io/github/v/release/saitejabandaru-in/llm-stat-eval-js?label=npm&color=orange&style=flat-square" alt="NPM Version" />
+  <img src="https://img.shields.io/github/v/release/saitejabandaru-in/llm-proof?label=npm&color=orange&style=flat-square" alt="NPM Version" />
   <img src="https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-green.svg?style=flat-square&logo=node.js" alt="Node Version" />
   <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License" />
 </p>
 
-`@saitejabandaru-in/llm-stat-eval` is a production-grade, distribution-free statistical validation framework designed to compare Large Language Models (LLMs) and AI agents. It implements **Thompson Sampling Bayesian Bandits** for prompt optimization, **Wald's Sequential Probability Ratio Testing (SPRT)**, **LLM Bias & Fairness analytics**, and **Nonparametric Combination (NPC)**.
+`@saitejabandaru-in/llm-proof` is a production-grade, distribution-free statistical validation framework designed to compare Large Language Models (LLMs) and AI agents. It implements **Thompson Sampling Bayesian Bandits** for prompt optimization, **Wald's Sequential Probability Ratio Testing (SPRT)**, **LLM Bias & Fairness analytics**, and **Nonparametric Combination (NPC)**.
 
 ---
 
@@ -28,7 +28,7 @@
 ## 🛠️ Installation
 
 ```bash
-npm install @saitejabandaru-in/llm-stat-eval
+npm install @saitejabandaru-in/llm-proof
 ```
 
 ---
@@ -80,7 +80,7 @@ Save this config as `eval_config.json`:
 
 Run the command in your terminal:
 ```bash
-npx llm-stat-eval --config eval_config.json --output report.html
+npx llm-proof --config eval_config.json --output report.html
 ```
 
 ### 3. What Output You Will Get
