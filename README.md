@@ -16,7 +16,7 @@
 | Feature | Description | Business Benefit |
 | :--- | :--- | :--- |
 | **🤠 Bayesian Bandits** | Thompson Sampling optimization using Beta-Binomial models. | **Eliminates underperforming prompt templates early** in multi-model tests, saving massive token costs. |
-| **⚖️ Bias & Fairness** | Dynamic Demographic Parity & Disparate Impact (four-fifths rule) testing. | Evaluates if LLM behavior differs significantly across protected subgroups (uses exact permutation p-values). |
+| **⚖️ Bias & Fairness** | Dynamic Demographic Parity & Disparate Impact (four-fifths disparate impact rule) testing. | Evaluates if LLM behavior differs significantly across protected subgroups (uses exact permutation p-values). |
 | **📉 Wald's SPRT** | On-the-fly streaming sequential hypothesis tests with dynamic boundaries. | **Saves up to 80%** on API token costs by stopping evaluation runs early. |
 | **📊 NPC Engine** | Jointly combines multiple correlated metrics (Accuracy, Latency, API Cost). | Evaluates multi-dimensional trade-offs without assuming normality. |
 | **📈 Bootstrapping** | Percentile and basic bootstrap confidence intervals. | Rigorously bounds metric uncertainty without parametric assumptions. |
@@ -33,113 +33,104 @@ npm install @saitejabandaru-in/llm-stat-eval
 
 ---
 
-## 🚀 Advanced Features Guide
+## 💡 Step-by-Step E2E Example & Expected Outputs
 
-### 1. Bayesian Multi-Armed Bandit Prompt Optimizer (`BanditEvaluator`)
-Test $K$ prompt templates simultaneously and prune underperforming ones on-the-fly:
+Here is exactly how the framework works in a real evaluation scenario, what output you will see, and how it protects your quality and budget.
 
-```typescript
-import { BanditEvaluator } from "@saitejabandaru-in/llm-stat-eval";
+### 1. The Scenario
+You are comparing **Model A (GPT-4o)** vs **Model B (Claude-3.5)** on 5 test items evaluating **Accuracy** (binary: 0 or 1) and **Latency** (milliseconds). You also want to verify if Model A has a demographic bias toward a `protectedGroup`.
 
-// Setup Bandit: 3 configs, prune if prob of being best < 5%, min samples 10
-const bandit = new BanditEvaluator(3, 0.05, 10);
+### 2. Running the Evaluation Code
+Save this config as `eval_config.json`:
 
-while (!bandit.isFinished()) {
-  // Select the next configuration index to evaluate via Thompson Sampling
-  const configIdx = bandit.selectNextConfig();
-  
-  // Run evaluation case (mock outcome here)
-  const isSuccessful = runLLMEvaluation(configIdx);
-  
-  // Update posteriors
-  bandit.update(configIdx, isSuccessful);
+```json
+{
+  "modelAName": "GPT-4o",
+  "modelBName": "Claude-3.5",
+  "metricNames": ["Accuracy", "Latency (ms)"],
+  "scoresA": [
+    [1.0, 240],
+    [1.0, 280],
+    [0.0, 420],
+    [1.0, 310],
+    [1.0, 270]
+  ],
+  "scoresB": [
+    [0.0, 580],
+    [1.0, 520],
+    [0.0, 690],
+    [0.0, 610],
+    [1.0, 640]
+  ],
+  "caseLogs": [
+    { "prompt": "Write list reversal code", "responseA": "...", "responseB": "..." },
+    { "prompt": "Explain string matching", "responseA": "...", "responseB": "..." },
+    { "prompt": "Explain quantum states", "responseA": "...", "responseB": "..." },
+    { "prompt": "Code binary search tree", "responseA": "...", "responseB": "..." },
+    { "prompt": "Summarize history event", "responseA": "...", "responseB": "..." }
+  ],
+  "demographics": ["female", "male", "female", "female", "male"],
+  "protectedGroup": "female",
+  "referenceGroup": "male",
+  "nPermutations": 1000,
+  "combinationMethod": "fisher",
+  "alternative": ["greater", "less"]
 }
-
-console.log("Winner Selected! Summary of runs:");
-console.log(bandit.getSummary());
 ```
 
-### 2. Bias, Fairness, & Disparate Impact Detection (`LLMFairnessEvaluator`)
-Rigorously measure if an LLM behaves differently across demographic groups (e.g. gender, age group):
-
-```typescript
-import { LLMFairnessEvaluator } from "@saitejabandaru-in/llm-stat-eval";
-
-const scores = [0.1, 0.2, 0.3, 0.8, 0.9, 0.85]; // model ratings/acceptances
-const demographics = ["group_a", "group_a", "group_a", "group_b", "group_b", "group_b"];
-
-const evaluator = new LLMFairnessEvaluator(0.5, 1000); // threshold 0.5, 1000 permutations
-const results = evaluator.evaluateFairness(scores, demographics, "group_a", "group_b");
-
-console.log("Demographic Parity Ratio:", results.demographicParityRatio); // DPR < 0.8 indicates disparate impact
-console.log("Bias Significance p-value:", results.pValue);             // p < 0.05 indicates statistically significant bias
-```
-
-### 3. Interactive Case Explorer Dashboard
-Generate reports containing interactive tables to search and filter individual prompt evaluation runs (e.g., failed cases, mismatches, wins):
-
-```typescript
-import { LLMComparator, generateHtmlReport } from "@saitejabandaru-in/llm-stat-eval";
-import * as fs from "fs";
-
-const comparator = new LLMComparator(1000, "fisher");
-comparator.compare(scoresA, scoresB, true);
-
-const html = generateHtmlReport(comparator, {
-  modelAName: "GPT-4o",
-  modelBName: "Claude-3.5",
-  metricNames: ["Accuracy"],
-  caseLogs: [
-    { prompt: "Write code to reverse a list", responseA: "...", responseB: "...", scoreA: 1, scoreB: 0 },
-    { prompt: "Explain Einstein theory", responseA: "...", responseB: "...", scoreA: 0, scoreB: 0 }
-  ]
-});
-fs.writeFileSync("report.html", html);
-```
-
----
-
-## 🖥️ Command Line Interface (CLI)
-Specify case logs and demographics in your `eval_config.json` to view comprehensive dashboards:
-
+Run the command in your terminal:
 ```bash
 npx llm-stat-eval --config eval_config.json --output report.html
 ```
 
-#### Multi-featured config sample (`eval_config.json`):
-```json
-{
-  "modelAName": "GPT-4o",
-  "modelBName": "Claude-3-Sonnet",
-  "metricNames": ["Accuracy"],
-  "scoresA": [1.0, 0.0, 1.0, 1.0, 1.0],
-  "scoresB": [0.0, 1.0, 0.0, 0.0, 1.0],
-  "caseLogs": [
-    { "prompt": "Prompt 1", "responseA": "Ans A", "responseB": "Ans B" },
-    { "prompt": "Prompt 2", "responseA": "Ans A", "responseB": "Ans B" }
-  ],
-  "demographics": ["minority", "majority", "minority", "majority", "minority"],
-  "protectedGroup": "minority",
-  "referenceGroup": "majority",
-  "nPermutations": 1000,
-  "combinationMethod": "fisher"
-}
+### 3. What Output You Will Get
+
+#### 📟 Terminal Console Output:
+```text
+Loading evaluation configuration from: eval_config.json...
+Running statistical comparison...
+- Permutations: 1000
+- Combination Method: FISHER
+- Alternative: ["greater","less"]
+- Paired design: true
+Computing Bootstrap Confidence Intervals...
+Computing Demographic Bias & Fairness metrics...
+
+=======================================================
+             STATISTICAL COMPARISON RESULTS            
+=======================================================
+Global Combined p-value (NPC): 0.0120
+Outcome: ✅ SIGNIFICANT DIFFERENCE
+-------------------------------------------------------
+Metric              Observed Diff     Partial p-value   Significant?
+-------------------------------------------------------
+Accuracy            0.4000            0.0240            Yes
+Latency (ms)        -318.0000         0.0080            Yes
+-------------------------------------------------------
+                  FAIRNESS & BIAS METRICS              
+-------------------------------------------------------
+Demographic Parity Ratio (DPR): 0.667
+Disparate Impact Detected:     ⚠️ YES (EEOC Out of Bounds)
+Bias Significance p-value:     0.0340 (⚠️ SIGNIFICANT BIAS)
+=======================================================
+Generating interactive HTML dashboard report...
+Report successfully written to: /Users/saitejabandaru/.../report.html
 ```
+
+#### 🎨 Interactive HTML Dashboard Dashboard (`report.html`):
+Opening `report.html` in your browser opens a premium glassmorphic dark-mode report containing:
+1. **Summary Cards**: Displays the **Global p-value (0.0120)** and confirms that the model difference is statistically significant.
+2. **Bootstrap CI Chart**: Renders horizontal floating bar charts representing the 95% Confidence Interval bounds for the Latency and Accuracy differences. Since they do not cross 0, it visually proves significance.
+3. **LLM Bias & Fairness Dashboard**: Displays a disparate impact warning card, noting that the Demographic Parity Ratio is `0.667` (below the 0.8 EEOC standard), indicating that Model A favors the reference group over the protected group.
+4. **Case-Level Failure Explorer**: An interactive table displaying all 5 test cases. You can type in the search bar (e.g., "Code") to instantly filter prompts, or select "GPT-4o Wins" from the dropdown.
 
 ---
 
-## 🧪 Mathematical Details
+## 💎 Why This is Extremely Helpful For Teams
 
-### Thompson Sampling Prior & Posterior Update
-Each configuration $k$ is modeled with a success probability $p_k \sim \text{Beta}(\alpha_k, \beta_k)$, initialized to $\text{Beta}(1,1)$. Upon observing outcome $X \in \{0, 1\}$:
-$$\alpha_k \leftarrow \alpha_k + X, \quad \beta_k \leftarrow \beta_k + (1 - X)$$
-
-### Nonparametric Combination (NPC)
-For $D$ evaluation metrics, the global null hypothesis is:
-$$H_0^G: \bigcap_{d=1}^D H_0^d$$
-
-The partial $p$-values computed via permutation are combined using the **Fisher Combining Function**:
-$$\psi_F(p) = -2 \sum_{d=1}^D \ln(p_d)$$
+* **🪙 API Cost Savings (SPRT)**: Instead of running evaluations on 1,000 prompt benchmarks (which can cost $100+ in OpenAI API credits), Wald's SPRT stops the test early at the 150th sample if Model A is already proving significantly better, saving **up to 80% on API costs**.
+* **🛡️ Production Degradation Guard**: By embedding the CLI in your GitHub Actions workflows, any PR containing prompt/system instructions that statistically degrades model accuracy or increases latency will be automatically blocked from merging.
+* **⚖️ Responsible AI Compliance**: The fairness analysis helps engineering leaders ensure and audit that their agent pipelines are free of demographic bias before public deployment.
 
 ---
 
