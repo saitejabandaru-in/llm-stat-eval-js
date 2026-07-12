@@ -27,6 +27,16 @@ test("CLI - end to end execution", () => {
             [0.0, 6.8],
             [1.0, 6.2]
         ],
+        caseLogs: [
+            { prompt: "Q1: Quantum mechanics?", responseA: "Ans A", responseB: "Ans B" },
+            { prompt: "Q2: Biology cell?", responseA: "Ans A", responseB: "Ans B" },
+            { prompt: "Q3: Deep learning?", responseA: "Ans A", responseB: "Ans B" },
+            { prompt: "Q4: Chemistry elements?", responseA: "Ans A", responseB: "Ans B" },
+            { prompt: "Q5: History timeline?", responseA: "Ans A", responseB: "Ans B" }
+        ],
+        demographics: ["female", "male", "female", "male", "female"],
+        protectedGroup: "female",
+        referenceGroup: "male",
         paired: true,
         nPermutations: 100,
         combinationMethod: "fisher",
@@ -48,15 +58,16 @@ test("CLI - end to end execution", () => {
         // Assertions on stdout
         assert.ok(stdout.includes("STATISTICAL COMPARISON RESULTS"));
         assert.ok(stdout.includes("Accuracy"));
-        assert.ok(stdout.includes("Coherence"));
+        assert.ok(stdout.includes("FAIRNESS & BIAS METRICS"));
         assert.ok(stdout.includes("Report successfully written to"));
         
         // Assertions on the generated HTML report file
         assert.ok(fs.existsSync(outputPath));
         const htmlContent = fs.readFileSync(outputPath, "utf-8");
         assert.ok(htmlContent.includes("LLM Statistical Comparison Report"));
-        assert.ok(htmlContent.includes("GPT-4"));
-        assert.ok(htmlContent.includes("Claude-3"));
+        assert.ok(htmlContent.includes("LLM Bias & Fairness Analysis"));
+        assert.ok(htmlContent.includes("Case-Level Failure Explorer"));
+        assert.ok(htmlContent.includes("Quantum mechanics"));
     } finally {
         // Cleanup test artifacts
         if (fs.existsSync(configPath)) {

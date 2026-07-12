@@ -3,6 +3,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { LLMComparator } from "./comparator";
+import { LLMEvaluator } from "./evaluator";
+import { LLMFairnessEvaluator, FairnessResults } from "./fairness";
 import { generateHtmlReport } from "./report";
 
 function showHelp(): void {
@@ -53,8 +55,7 @@ async function run(): Promise<void> {
         process.exit(1);
     }
     
-    // Validate required fields in JSON config
-    const { scoresA, scoresB } = configData;
+    const { scoresA, scoresB, caseLogs, demographics, protectedGroup, referenceGroup } = configData;
     if (!scoresA || !scoresB || !Array.isArray(scoresA) || !Array.isArray(scoresB)) {
         console.error("Error: Config JSON must contain 'scoresA' and 'scoresB' arrays.");
         process.exit(1);
@@ -73,18 +74,58 @@ async function run(): Promise<void> {
     const metricNames = configData.metricNames || Array.from({ length: nMetrics }, (_, i) => `Metric ${i}`);
     
     console.log(`Running statistical comparison...`);
-    console.log(`- Permutations: ${nPermutations}`);
-    console.log(`- Combination Method: ${combinationMethod.toUpperCase()}`);
-    console.log(`- Alternative: ${JSON.stringify(alternative)}`);
-    console.log(`- Paired design: ${paired}`);
-    
     const comparator = new LLMComparator(nPermutations, combinationMethod, alternative, 42);
-    
     try {
         comparator.compare(scoresA, scoresB, paired);
     } catch (err: any) {
         console.error(`Error executing permutation test comparison: ${err.message}`);
         process.exit(1);
+    }
+
+    // Compute Bootstrap Confidence Intervals on differences
+    console.log("Computing Bootstrap Confidence Intervals...");
+    const evaluator = new LLMEvaluator(1000, 0.95, 42);
+    const diffsMatrix: number[][] = [];
+    for (let i = 0; i < scoresA.length; i++) {
+        const rowA = Array.isArray(scoresA[i]) ? scoresA[i] : [scoresA[i]];
+        const rowB = Array.isArray(scoresB[i]) ? scoresB[i] : [scoresB[i]];
+        const rowDiff: number[] = [];
+        for (let d = 0; d < nMetrics; d++) {
+            rowDiff.push(rowA[d] - rowB[d]);
+        }
+        diffsMatrix.push(rowDiff);
+    }
+    const bootstrapResults = evaluator.bootstrapCi(diffsMatrix, "mean", "percentile");
+
+    // Optional: Compute Demographic Fairness & Bias
+    let fairnessResults: FairnessResults | undefined;
+    if (demographics && Array.isArray(demographics) && protectedGroup && referenceGroup) {
+        console.log("Computing Demographic Bias & Fairness metrics...");
+        const fairnessEvaluator = new LLMFairnessEvaluator(0.5, nPermutations, 42);
+        // Extract first column as proxy rating score
+        const numericScores = scoresA.map((row: any) => Array.isArray(row) ? row[0] : row);
+        try {
+            fairnessResults = fairnessEvaluator.evaluateFairness(
+                numericScores,
+                demographics,
+                protectedGroup,
+                referenceGroup
+            );
+        } catch (err: any) {
+            console.warn(`Warning: Could not compute fairness metrics: ${err.message}`);
+        }
+    }
+
+    // Optional: Format case logs
+    let formattedCaseLogs: any[] = [];
+    if (caseLogs && Array.isArray(caseLogs)) {
+        formattedCaseLogs = caseLogs.map((log: any, idx: number) => ({
+            prompt: log.prompt || `Sample ${idx}`,
+            responseA: log.responseA || "",
+            responseB: log.responseB || "",
+            scoreA: Array.isArray(scoresA[idx]) ? scoresA[idx][0] : scoresA[idx],
+            scoreB: Array.isArray(scoresB[idx]) ? scoresB[idx][0] : scoresB[idx]
+        }));
     }
     
     // Print Results Table
@@ -115,6 +156,15 @@ async function run(): Promise<void> {
             sig
         );
     }
+    
+    if (fairnessResults) {
+        console.log("-------------------------------------------------------");
+        console.log("                  FAIRNESS & BIAS METRICS              ");
+        console.log("-------------------------------------------------------");
+        console.log(`Demographic Parity Ratio (DPR): ${fairnessResults.demographicParityRatio.toFixed(3)}`);
+        console.log(`Disparate Impact Detected:     ${fairnessResults.disparateImpactDetected ? "⚠️ YES (EEOC Out of Bounds)" : "✅ NO"}`);
+        console.log(`Bias Significance p-value:     ${fairnessResults.pValue.toFixed(4)} (${fairnessResults.isBiasSignificant ? "⚠️ SIGNIFICANT BIAS" : "✅ FAIR"})`);
+    }
     console.log("=======================================================");
     
     // Generate and write report
@@ -124,7 +174,12 @@ async function run(): Promise<void> {
             modelAName,
             modelBName,
             metricNames,
-            outputPath: outputReportPath
+            outputPath: outputReportPath,
+            bootstrapResults,
+            caseLogs: formattedCaseLogs,
+            fairnessResults,
+            protectedGroup,
+            referenceGroup
         });
         fs.writeFileSync(outputReportPath, html, "utf-8");
         console.log(`Report successfully written to: ${path.resolve(outputReportPath)}`);
