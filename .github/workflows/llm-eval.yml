@@ -32,10 +32,10 @@ jobs:
       # are statistically significantly worse than main baselines.
       # If the global p-value indicates degradation (under your config threshold),
       # the CLI will fail and prevent the PR merge.
-      run: npx @saitejabandaru-in/llm-proof --config eval_scores.json --output report.html
+      run: npx @saitejabandaru-in/llm-stat --config eval_scores.json --output report.html
       
     - name: Upload HTML Report Dashboard
       uses: actions/upload-artifact@v3
       with:
-        name: llm-proof-report
+        name: llm-stat-report
         path: report.html
